@@ -10,6 +10,16 @@ import cv2
 import os
 
 
+'''
+class that generates video stream and receives video stream
+smoothing of frame predictions
+function that deals with local camera
+checkignif file exists and replacement of args
+suggested improvements
+'''
+
+
+
 # return a 2-tuple of the face locations and their corresponding
 # locations
 def detect_and_predict_mask(frame, faceNet, maskNet):
@@ -156,10 +166,3 @@ while True:
 cv2.destroyAllWindows()
 vs.stop()
 
-'''
-*push to github after each change
-class that only takes video stream
-class that gets info and modifies original image
-main script that works with camera
-suggested improvements
-'''
