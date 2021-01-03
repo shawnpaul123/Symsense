@@ -44,20 +44,16 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 		# the detection
 		#detections comes from facenet
 
-		confidence = detections[0, 0, i, 2]
+		conf = detections[0, 0, i, 2]
 		# filter out weak detections by ensuring the confidence is
 		# greater than the minimum confidence
 
-		if  i == 1000:
-			break
 
 
-
-		if confidence > args["confidence"]:
+		if conf > confidence:
 			# compute the (x, y)-coordinates of the bounding box for
 			# the object
-			print('confidence')
-			print(confidence)
+			
 			box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
 			(startX, startY, endX, endY) = box.astype("int")
 			# ensure the bounding boxes fall within the dimensions of
@@ -84,30 +80,23 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 		# in the above `for` loop
 		faces = np.array(faces, dtype="float32")
 		preds = maskNet.predict(faces, batch_size=32)
-		print('preds')
-		print(preds)
+	
 	# return a 2-tuple of the face locations and their corresponding
 	# locations
 	return (locs, preds)
 
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-f", "--face", type=str,
-	default="face_detector",
-	help="path to face detector model directory")
-ap.add_argument("-m", "--model", type=str,
-	default="mask_detector.model",
-	help="path to trained face mask detector model")
-ap.add_argument("-c", "--confidence", type=float, default=0.5,
-	help="minimum probability to filter weak detections")
-args = vars(ap.parse_args())
+
+face = './models/face_detector'
+mask = './models/model'
+confidence = 0.5
+
 
 
 # load our serialized face detector model from disk
 print("[INFO] loading face detector model...")
-prototxtPath = os.path.sep.join([args["face"], "deploy.prototxt"])
-weightsPath = os.path.sep.join([args["face"],
+prototxtPath = os.path.sep.join([face, "deploy.prototxt"])
+weightsPath = os.path.sep.join([face,
 	"res10_300x300_ssd_iter_140000.caffemodel"])
 
 faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
@@ -116,7 +105,7 @@ print("[INFO] loading face mask detector model...")
 
 
 
-maskNet = load_model('model')
+maskNet = load_model(mask)
  
 
 #maskNet = load_model(args["model"])
