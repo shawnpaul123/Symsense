@@ -42,16 +42,23 @@ class detection_ml:
         self.prototxtPath = os.path.sep.join([self.model_face_loc, "deploy.prototxt"])
         self.weightsPath = os.path.sep.join([self.model_face_loc,"res10_300x300_ssd_iter_140000.caffemodel"])
         self.confidence = 0.5
-       
-
-
-    def load_models(self):
-
-        #load all the models
-        
-        self.maskNet = load_model(self.model_mask_loc)        
-        self.landmark_detector.loadModel(self.model_landmark_loc)
+        #run landmark code
+        self.run_landmarks = False
         self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
+        self.example_mask = ""
+        self.example_no_mask = ""
+        self.computer_stream = True
+        self.landmark_test = './examples/example_01.jpg'
+        #load all the models        
+        self.maskNet = load_model(self.model_mask_loc)        
+        self.landmarkNet = load_model(self.model_landmark_loc)      
+        self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
+
+        pass
+
+
+
+
 
 
 
@@ -70,7 +77,7 @@ class detection_ml:
         faces = []
         locs = []
         preds = []
-
+        
 
         for i in range(0, detections.shape[2]):
             # extract the confidence (i.e., probability) associated with
@@ -96,13 +103,17 @@ class detection_ml:
                 # ordering, resize it to 224x224, and preprocess it
                 face = frame[startY:endY, startX:endX]
                 face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-                face = cv2.resize(face, (224, 224))
+                face_landmark = face
+                face = cv2.resize(face, (224, 224))               
                 face = img_to_array(face)
                 face = preprocess_input(face)
                 # add the face and bounding boxes to their respective
-                # lists
+                # lists              
                 faces.append(face)
                 locs.append((startX, startY, endX, endY))
+
+
+
 
         return (faces,locs)
 
@@ -128,18 +139,38 @@ class detection_ml:
 
 
     #frame is the pic and face are the coordinates
-    def add_landmarks(self,frame,face_coords):
+    def detect_landmarks(self,face_list=None):
+       
+        landmarks = []
+        faces = []
+
+        if self.landmark_test:
+
+            face = cv2.imread(self.landmark_test, cv2.IMREAD_GRAYSCALE)
+            print(face)
+            face = cv2.resize(face, (96, 96))  
+            face = img_to_array(face)
+            face = preprocess_input(face)
+            faces.append(face)
+            #imread image and make black and white
+            #make model predicition
+            #return models
+
+        else:
+            for face in face_list:
+                face = cv2.resize(face, (96, 96))  
+                #make image black and white    
+                face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)         
+                face = img_to_array(face)
+                face = preprocess_input(face)
+                faces.append(face)
+
+        faces = np.array(faces, dtype="float32")
+        landmarks = self.landmarkNet.predict(faces, batch_size=32)
         
-        x, landmarks = self.landmark_detector.fit(frame,np.array(face_coords))
 
         return landmarks
         
-
-
-
-    def return_stats(self):
-        pass
-
 
 
 
@@ -147,13 +178,8 @@ class detection_ml:
 class image_processing(detection_ml):
 
     def __init__(self):
-        self.example_mask = ""
-        self.example_no_mask = ""
-        self.computer_stream = True
         super().__init__()
-
-
-
+        
 
     def rpi_stream(self):
         #https://www.pyimagesearch.com/2015/03/30/
@@ -161,50 +187,58 @@ class image_processing(detection_ml):
         pass
 
 
+    def plot_image(self):
+        pass
+
+
     def video_stream(self):
         # initialize the video stream and allow the camera sensor to warm up
         print("[INFO] starting video stream...")
 
-        #init the landmark model
-        self.load__models()
+        
+        #init the  models
+     
 
         if self.computer_stream:
             vs = VideoStream(src=0).start()
         # loop over the frames from the video stream
-        i = 0
+     
         while True:
             
             # grab the frame from the threaded video stream and resize it
             # to have a maximum width of 400 pixels
+            #########################################################################################
             if self.computer_stream:
                 frame = vs.read()
                 frame = imutils.resize(frame, width=400)
             # detect faces in the frame and determine if they are wearing a
             # face mask or not
+
             else:
                 pass
                 #this is where you have code to get video stream from rpi
 
 
+            #########################################################################################
 
+
+            #!This is where you would have to send/receive a request/response
             faces,locs = self.detect_face(frame)
             preds = self.detect_mask(faces)
+
+
+            if self.run_landmarks:
+                landmarks = self.detect_landmarks(faces)
+
 
             if len(preds) == 0:
                 continue
 
             # loop over the detected face locations and their corresponding
             # locations
-            for (box, pred,f) in zip(locs, preds,faces):
+            for (box, pred,face) in zip(locs, preds,faces):
                 # unpack the bounding box and predictions
                 (startX, startY, endX, endY) = box
-
-
-                #break after one iteration and save landmarks in txt file
-                landmarks = self.add_landmarks(f,locs)
-
-               
-
 
                 #get back the landmarks for each face
                 (mask, withoutMask) = pred
@@ -220,12 +254,14 @@ class image_processing(detection_ml):
                 cv2.putText(frame, label, (startX, startY - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
                 cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+
+                if self.run_landmarks:
                 
-                for landmark in landmarks:
-                    for x,y in landmark[0]:
-                        # display landmarks on "image_cropped"
-                        # with white colour in BGR and thickness 1
-                        cv2.circle(frame, (x, y), 1, (255, 255, 255), 1)
+                    for landmark in landmarks:
+                        for x,y in landmark[0]:
+                            # display landmarks on "image_cropped"
+                            # with white colour in BGR and thickness 1
+                            cv2.circle(frame, (x, y), 1, (255, 255, 255), 1)
 
 
             # show the output frame
@@ -240,15 +276,12 @@ class image_processing(detection_ml):
 
 
 
-    def image_test(self):
-        #gets image or video option
-        #runs accordn=igly
-        pass
 
 
 if __name__ == '__main__':
     imp = image_processing()
-    imp.video_stream()
+    print(imp.detect_landmarks())
+    
 
 
 
