@@ -10,14 +10,6 @@ import cv2
 import os
 
 
-'''
-class that generates video stream and receives video stream
-smoothing of frame predictions
-function that deals with local camera
-checkignif file exists and replacement of args
-suggested improvements
-'''
-
 
 
 
@@ -90,14 +82,14 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 	
 	# return a 2-tuple of the face locations and their corresponding
 	# locations
-	return (locs, preds, landmarks)
+	return (locs, preds)
 
 
 
 face = './models/face_detector'
-mask = './models/mask_detector'
+mask= './models/mask_detector'
 
-
+landmarkNet = True
 
 
 # load our serialized face detector model from disk
@@ -129,19 +121,19 @@ while True:
 	frame = imutils.resize(frame, width=400)
 	# detect faces in the frame and determine if they are wearing a
 	# face mask or not
-	(locs, preds, landmarks) = detect_and_predict_mask(frame, faceNet, maskNet, landmarkNet)
+	(locs, preds) = detect_and_predict_mask(frame, faceNet, maskNet)
 
 	# loop over the detected face locations and their corresponding
 	# locations
-	for (box, pred, landmark) in zip(locs, preds, landmarks):
+	for (box, pred) in zip(locs, preds):
 		# unpack the bounding box and predictions
 		(startX, startY, endX, endY) = box
 		(mask, withoutMask) = pred
 		
 		# determine the class label and color we'll use to draw
 		# the bounding box and text
-		label = "Mask" if mask > withoutMask else "No Mask"
-		color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+		label = "Perfect" if mask > withoutMask else "Still Perfect"
+		color = (0, 255, 0) if label == "Perfect" else (0, 0, 255)
 		# include the probability in the label
 		label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
 		# display the label and bounding box rectangle on the output
