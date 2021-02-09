@@ -1,4 +1,12 @@
-class variable_holder(self):
+import os
+from tensorflow.keras.models import load_model
+import cv2
+
+
+
+
+
+class variable_holder:
 
         def __init__(self):
             #read where models are
@@ -10,6 +18,7 @@ class variable_holder(self):
             self.confidence = 0.5
             #run landmark code
             self.run_landmarks = False
+            self.lm_bs = 32
             self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
             self.example_mask = ""
             self.example_no_mask = ""
@@ -19,4 +28,5 @@ class variable_holder(self):
             self.maskNet = load_model(self.model_mask_loc)        
             self.landmarkNet = load_model(self.model_landmark_loc)      
             self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
+
             pass

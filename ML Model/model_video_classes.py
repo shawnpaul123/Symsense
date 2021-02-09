@@ -2,15 +2,18 @@ import cv2
 import os
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.models import load_model,model_from_json
+from tensorflow.keras.models import load_model
 from imutils.video import VideoStream
 import numpy as np
 import argparse
 import imutils
 import time
+from variables import variable_holder
+
 #cd desktop/symsense/ml model/symsense/ml model
 #python -m pip install --user opencv-contrib-python
-
+# place paper with 2 straight lines - have record button(get data from template) - show where to get the 2 time values for the excel sheet
+# axis_2 = y ; axis_3 = x
 
 
 '''
@@ -32,36 +35,11 @@ open network streaming: https://www.pyimagesearch.com/2019/04/15/live-video-stre
 
 '''
 
-class detection_ml:
+class detection_ml(variable_holder):
 
     def __init__(self):
-        #read where models are
-        self.model_face_loc = './models/face_detector'
-        self.model_landmark_loc =  './models/landmark_detector'
-        self.model_mask_loc = './models/mask_detector'
-        self.prototxtPath = os.path.sep.join([self.model_face_loc, "deploy.prototxt"])
-        self.weightsPath = os.path.sep.join([self.model_face_loc,"res10_300x300_ssd_iter_140000.caffemodel"])
-        self.confidence = 0.5
-        #run landmark code
-        self.run_landmarks = False
-        self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
-        self.example_mask = ""
-        self.example_no_mask = ""
-        self.computer_stream = True
-        self.landmark_test = './examples/example_01.jpg'
-        #load all the models        
-        self.maskNet = load_model(self.model_mask_loc)        
-        self.landmarkNet = load_model(self.model_landmark_loc)      
-        self.faceNet = cv2.dnn.readNet(self.prototxtPath, self.weightsPath)
-
+        super().__init__()
         pass
-
-
-
-
-
-
-
 
     #detect whether or not face is present
     #inps a resized frame//image of 400
@@ -118,9 +96,6 @@ class detection_ml:
         return (faces,locs)
 
 
-        
-
-
     def detect_mask(self,faces):
 
         if len(faces) > 0:
@@ -137,26 +112,29 @@ class detection_ml:
         return preds
             
 
-
     #frame is the pic and face are the coordinates
     def detect_landmarks(self,face_list=None):
        
         landmarks = []
         faces = []
 
+        #imread image and make black and white
+        #make model predicition
+        #return models
+
         if self.landmark_test:
 
-            face = cv2.imread(self.landmark_test, cv2.IMREAD_GRAYSCALE)
-            print(face)
+            self.bs = 1
+            face = cv2.imread(self.landmark_test, cv2.IMREAD_GRAYSCALE)            
             face = cv2.resize(face, (96, 96))  
             face = img_to_array(face)
             face = preprocess_input(face)
             faces.append(face)
-            #imread image and make black and white
-            #make model predicition
-            #return models
+            
 
         else:
+
+
             for face in face_list:
                 face = cv2.resize(face, (96, 96))  
                 #make image black and white    
@@ -164,9 +142,10 @@ class detection_ml:
                 face = img_to_array(face)
                 face = preprocess_input(face)
                 faces.append(face)
+       
 
         faces = np.array(faces, dtype="float32")
-        landmarks = self.landmarkNet.predict(faces, batch_size=32)
+        landmarks = self.landmarkNet.predict(faces, batch_size=self.bs)
         
 
         return landmarks
@@ -195,8 +174,7 @@ class image_processing(detection_ml):
         # initialize the video stream and allow the camera sensor to warm up
         print("[INFO] starting video stream...")
 
-        
-        #init the  models
+     
      
 
         if self.computer_stream:
@@ -280,7 +258,8 @@ class image_processing(detection_ml):
 
 if __name__ == '__main__':
     imp = image_processing()
-    print(imp.detect_landmarks())
+    imp.video_stream()
+    
     
 
 
