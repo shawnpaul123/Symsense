@@ -20,6 +20,9 @@ suggested improvements
 
 
 
+face = './models/face_detector'
+mask = './models/mask_detector'
+
 
 
 
@@ -95,9 +98,6 @@ def detect_and_predict_mask(frame, faceNet, maskNet):
 	return (locs, preds, landmarks)
 
 
-
-face = './models/face_detector'
-mask = './models/mask_detector'
 
 
 

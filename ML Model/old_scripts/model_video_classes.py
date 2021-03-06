@@ -8,12 +8,11 @@ import numpy as np
 import argparse
 import imutils
 import time
-from variables import variable_holder
+from variables import variable_holder, detection_ml
 
 #cd desktop/symsense/ml model/symsense/ml model
 #python -m pip install --user opencv-contrib-python
-# place paper with 2 straight lines - have record button(get data from template) - show where to get the 2 time values for the excel sheet
-# axis_2 = y ; axis_3 = x
+
 
 
 '''
@@ -34,126 +33,6 @@ https://towardsdatascience.com/detecting-facial-features-using-deep-learning-2e2
 open network streaming: https://www.pyimagesearch.com/2019/04/15/live-video-streaming-over-network-with-opencv-and-imagezmq/
 
 '''
-
-class detection_ml(variable_holder):
-
-    def __init__(self):
-        super().__init__()
-        pass
-
-    #detect whether or not face is present
-    #inps a resized frame//image of 400
-    #outs - faces and their locations
-    def detect_face(self,frame):
-        (h, w) = frame.shape[:2]
-        blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300),(104.0, 177.0, 123.0))
-        # pass the blob through the network and obtain the face detections
-        self.faceNet.setInput(blob)
-        detections = self.faceNet.forward()
-        # initialize our list of faces, their corresponding locations,
-        # and the list of predictions from our face mask network
-        faces = []
-        locs = []
-        preds = []
-        
-
-        for i in range(0, detections.shape[2]):
-            # extract the confidence (i.e., probability) associated with
-            # the detection
-            #detections comes from facenet
-
-            conf = detections[0, 0, i, 2]
-            # filter out weak detections by ensuring the confidence is
-            # greater than the minimum confidence
-
-            if conf > self.confidence:
-                # compute the (x, y)-coordinates of the bounding box for
-                # the object
-                
-                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                (startX, startY, endX, endY) = box.astype("int")
-                # ensure the bounding boxes fall within the dimensions of
-                # the frame
-                (startX, startY) = (max(0, startX), max(0, startY))
-                (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
-
-                # extract the face ROI, convert it from BGR to RGB channel
-                # ordering, resize it to 224x224, and preprocess it
-                face = frame[startY:endY, startX:endX]
-                face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-                face_landmark = face
-                face = cv2.resize(face, (224, 224))               
-                face = img_to_array(face)
-                face = preprocess_input(face)
-                # add the face and bounding boxes to their respective
-                # lists              
-                faces.append(face)
-                locs.append((startX, startY, endX, endY))
-
-
-
-
-        return (faces,locs)
-
-
-    def detect_mask(self,faces):
-
-        if len(faces) > 0:
-        # for faster inference we'll make batch predictions on *all*
-        # faces at the same time rather than one-by-one predictions
-        # in the above `for` loop
-            faces = np.array(faces, dtype="float32")
-            preds = self.maskNet.predict(faces, batch_size=32)
-
-        else:
-            preds = []
-
-
-        return preds
-            
-
-    #frame is the pic and face are the coordinates
-    def detect_landmarks(self,face_list=None):
-       
-        landmarks = []
-        faces = []
-
-        #imread image and make black and white
-        #make model predicition
-        #return models
-
-        if self.landmark_test:
-
-            self.bs = 1
-            face = cv2.imread(self.landmark_test, cv2.IMREAD_GRAYSCALE)            
-            face = cv2.resize(face, (96, 96))  
-            face = img_to_array(face)
-            face = preprocess_input(face)
-            faces.append(face)
-            
-
-        else:
-
-
-            for face in face_list:
-                face = cv2.resize(face, (96, 96))  
-                #make image black and white    
-                face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)         
-                face = img_to_array(face)
-                face = preprocess_input(face)
-                faces.append(face)
-       
-
-        faces = np.array(faces, dtype="float32")
-        landmarks = self.landmarkNet.predict(faces, batch_size=self.bs)
-        
-
-        return landmarks
-        
-
-
-
-
 class image_processing(detection_ml):
 
     def __init__(self):
@@ -170,7 +49,7 @@ class image_processing(detection_ml):
         pass
 
 
-    def video_stream(self):
+    def mvp_video_stream(self):
         # initialize the video stream and allow the camera sensor to warm up
         print("[INFO] starting video stream...")
 
@@ -233,6 +112,8 @@ class image_processing(detection_ml):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
                 cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
 
+                '''
+
                 if self.run_landmarks:
                 
                     for landmark in landmarks:
@@ -240,6 +121,9 @@ class image_processing(detection_ml):
                             # display landmarks on "image_cropped"
                             # with white colour in BGR and thickness 1
                             cv2.circle(frame, (x, y), 1, (255, 255, 255), 1)
+
+
+                '''
 
 
             # show the output frame
@@ -258,7 +142,7 @@ class image_processing(detection_ml):
 
 if __name__ == '__main__':
     imp = image_processing()
-    imp.video_stream()
+    imp.mvp_video_stream()
     
     
 
